@@ -42,20 +42,16 @@ struct D3D12Session : Session {
 		auto d3d12Info = *createInfo;
 		d3d12Info.format = d3d12SwapchainFormat;
 
-		auto r = xrCreateSwapchain(backendSession, &d3d12Info, swapchain);
-		if (XR_FAILED(r)) return r;
+		XR_TRY(xrCreateSwapchain(backendSession, &d3d12Info, swapchain));
 		// TODO: Need to cleanup swapchain if any of the below fails
 
 		uint32_t n;
 
-		r = xrEnumerateSwapchainImages(*swapchain, 0, &n, nullptr);
-		if (XR_FAILED(r)) return r;
+		XR_TRY(xrEnumerateSwapchainImages(*swapchain, 0, &n, nullptr));
 
 		std::vector<XrSwapchainImageD3D12KHR> d3d12Images(n, {XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR});
 
-		r = xrEnumerateSwapchainImages(*swapchain, n, &n, (XrSwapchainImageBaseHeader*)d3d12Images.data());
-		if (XR_FAILED(r)) return r;
-
+		XR_TRY(xrEnumerateSwapchainImages(*swapchain, n, &n, (XrSwapchainImageBaseHeader*)d3d12Images.data()));
 		if (n != d3d12Images.size()) return XR_ERROR_RUNTIME_FAILURE;
 
 		WGPUTextureDescriptor textureDesc{
@@ -88,7 +84,7 @@ struct D3D12Session : Session {
 			images.push_back(wgpuTextureCreateView(texture, &textureViewDesc));
 		}
 
-		return r;
+		return XR_SUCCESS;
 	}
 };
 
