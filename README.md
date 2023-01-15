@@ -1,4 +1,4 @@
-Dawn / openxr interop library
+Simple dawn / openxr interop library
 
 (Currently only handles d3d12!)
 
