@@ -9,35 +9,26 @@ using namespace dawnxr::internal;
 
 namespace {
 
-const auto dawnSwapchainFormat = WGPUTextureFormat_BGRA8UnormSrgb;
+const auto dawnSwapchainFormat = wgpu::TextureFormat::BGRA8UnormSrgb;
 const auto d3d12SwapchainFormat = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
-
-// const auto dawnSwapchainFormat = WGPUTextureFormat_RGBA8UnormSrgb;
-// const auto d3d12SwapchainFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-
-// const int64_t dawnSwapchainFormat = WGPUTextureFormat_BGRA8Unorm;
-// const int64_t d3d12SwapchainFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
-
-// const int64_t dawnSwapchainFormat = WGPUTextureFormat_RGBA8Unorm;
-// const int64_t d3d12SwapchainFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 struct D3D12Session : Session {
 
-	D3D12Session(XrSession session, WGPUDevice device) : Session(session, device) {}
+	D3D12Session(XrSession session, const wgpu::Device& device) : Session(session, device) {}
 
-	XrResult enumerateSwapchainFormats(std::vector<WGPUTextureFormat>& formats) override {
+	XrResult enumerateSwapchainFormats(std::vector<wgpu::TextureFormat>& formats) override {
 
 		formats.push_back(dawnSwapchainFormat);
 
 		return XR_SUCCESS;
 	}
 
-	XrResult createSwapchain(const XrSwapchainCreateInfo* createInfo, std::vector<WGPUTextureView>& images,
+	XrResult createSwapchain(const XrSwapchainCreateInfo* createInfo, std::vector<wgpu::TextureView>& images,
 							 XrSwapchain* swapchain) override {
 
 		if (createInfo->type != XR_TYPE_SWAPCHAIN_CREATE_INFO) return XR_ERROR_HANDLE_INVALID;
 
-		if (createInfo->format != dawnSwapchainFormat) return XR_ERROR_RUNTIME_FAILURE;
+		if (createInfo->format != (int64_t)dawnSwapchainFormat) return XR_ERROR_RUNTIME_FAILURE;
 
 		auto d3d12Info = *createInfo;
 		d3d12Info.format = d3d12SwapchainFormat;
@@ -54,34 +45,35 @@ struct D3D12Session : Session {
 		XR_TRY(xrEnumerateSwapchainImages(*swapchain, n, &n, (XrSwapchainImageBaseHeader*)d3d12Images.data()));
 		if (n != d3d12Images.size()) return XR_ERROR_RUNTIME_FAILURE;
 
-		WGPUTextureDescriptor textureDesc{
-			nullptr,												// nextInChain
-			nullptr,												// label
-			WGPUTextureUsage_RenderAttachment,						// usage
-			WGPUTextureDimension_2D,								// dimension
-			WGPUExtent3D{createInfo->width, createInfo->height, 1}, // size
-			(WGPUTextureFormat)createInfo->format,					// format
-			createInfo->mipCount,									// mipLevelCount;
-			createInfo->sampleCount,								// sampleCount;
-			0,														// viewFormatCount;
-			nullptr													// view formats
+		wgpu::TextureDescriptor textureDesc{
+			nullptr,												  // nextInChain
+			nullptr,												  // label
+			wgpu::TextureUsage::RenderAttachment,					  // usage
+			wgpu::TextureDimension::e2D,							  // dimension
+			wgpu::Extent3D{createInfo->width, createInfo->height, 1}, // size
+			(wgpu::TextureFormat)createInfo->format,				  // format
+			createInfo->mipCount,									  // mipLevelCount;
+			createInfo->sampleCount,								  // sampleCount;
+			0,														  // viewFormatCount;
+			nullptr													  // view formats
 		};
 
-		WGPUTextureViewDescriptor textureViewDesc{
-			nullptr,					 // nextInChain
-			nullptr,					 // label
-			textureDesc.format,			 // format
-			WGPUTextureViewDimension_2D, // dimension
-			0,							 // baseMipLevel
-			1,							 // mipLevelCount
-			0,							 // baseArrayLayer
-			1,							 // arrayLayerCount
-			WGPUTextureAspect_All		 // aspect
+		wgpu::TextureViewDescriptor textureViewDesc{
+			nullptr,						 // nextInChain
+			nullptr,						 // label
+			textureDesc.format,				 // format
+			wgpu::TextureViewDimension::e2D, // dimension
+			0,								 // baseMipLevel
+			1,								 // mipLevelCount
+			0,								 // baseArrayLayer
+			1,								 // arrayLayerCount
+			wgpu::TextureAspect::All		 // aspect
 		};
 
 		for (auto& it : d3d12Images) {
-			auto texture = dawn::native::d3d12::CreateSwapchainWGPUTexture(device, &textureDesc, it.texture);
-			images.push_back(wgpuTextureCreateView(texture, &textureViewDesc));
+			auto texture = wgpu::Texture(dawn::native::d3d12::CreateSwapchainWGPUTexture(
+				device.Get(), (WGPUTextureDescriptor*)&textureDesc, it.texture));
+			images.push_back(texture.CreateView(&textureViewDesc));
 		}
 
 		return XR_SUCCESS;
@@ -127,8 +119,8 @@ XrResult createD3D12Session(XrInstance instance, const XrSessionCreateInfo* crea
 
 	XrGraphicsBindingD3D12KHR d3d12Binding{XR_TYPE_GRAPHICS_BINDING_D3D12_KHR};
 
-	d3d12Binding.device = dawn::native::d3d12::GetD3D12Device(dawnDevice).Get();
-	d3d12Binding.queue = dawn::native::d3d12::GetD3D12CommandQueue(dawnDevice).Get();
+	d3d12Binding.device = dawn::native::d3d12::GetD3D12Device(dawnDevice.Get()).Get();
+	d3d12Binding.queue = dawn::native::d3d12::GetD3D12CommandQueue(dawnDevice.Get()).Get();
 
 	//	auto luid = d3d12Binding.device->GetAdapterLuid();
 	//	std::cout << "### D3D12 Device adapter LUID: " << luid.HighPart << " " << luid.LowPart << std::endl;

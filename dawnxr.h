@@ -1,12 +1,12 @@
 #pragma once
 
-#include <dawn/webgpu.h>
+#include <dawn/webgpu_cpp.h>
 
 #include <dawn/native/DawnNative.h>
 
-// Currently supported backends: D3D12, Vulkan
+// Currently only supports windows platform and D3D12, Vulkan backends.
 
-#if _WIN32
+#if XROS_OS_WINDOWS
 #define XR_USE_GRAPHICS_API_D3D12 1
 #include <d3d12.h>
 #include <windows.h>
@@ -16,7 +16,10 @@
 #define VK_USE_PLATFORM_WIN32_KHR 1
 #include <vulkan/vulkan.h>
 #else
-#error System not supported
+#define XR_USE_GRAPHICS_API_VULKAN 1
+//#define VK_USE_PLATFORM_WIN32_KHR 1
+#include <vulkan/vulkan.h>
+//#error System not supported
 #endif
 
 #include <openxr/openxr_platform.h>
@@ -30,30 +33,30 @@ namespace dawnxr {
 
 // Mirrors the XrGraphicsBindingD3D12KHR etc structs.
 struct GraphicsBindingDawn {
-	XrStructureType type;
-	const void* XR_MAY_ALIAS next;
-	WGPUDevice device;
+	XrStructureType type = XR_TYPE_GRAPHICS_BINDING_DAWN_EXT;
+	const void* XR_MAY_ALIAS next = nullptr;
+	wgpu::Device device;
 };
 
-// Mirrors the XrSwapchainImageD3D12 etc structs.
+// Mirrors the XrSwapchainImageD3D12KHR etc structs.
 struct SwapchainImageDawn {
-	XrStructureType type;
-	void* XR_MAY_ALIAS next;
-	WGPUTextureView textureView;
+	XrStructureType type = XR_TYPE_SWAPCHAIN_IMAGE_DAWN_EXT;
+	void* XR_MAY_ALIAS next = nullptr;
+	wgpu::TextureView textureView;
 };
 
 // Mirrors the XrGraphicsRequirementsD3D12KHR etc structs.
 struct GraphicsRequirementsDawn {
-	XrStructureType type;
-	void* XR_MAY_ALIAS next;
+	XrStructureType type = XR_TYPE_GRAPHICS_REQUIREMENTS_DAWN_EXT;
+	void* XR_MAY_ALIAS next = nullptr;
 };
 
 // Gets dawn graphics requirements for a given backend type. Currently just dumps backend requirements to stdout.
-XrResult getGraphicsRequirements(XrInstance instance, XrSystemId systemId, WGPUBackendType backendType,
+XrResult getGraphicsRequirements(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType,
 								 GraphicsRequirementsDawn* graphicsRequirements);
 
 // Creates a dawn::native::AdapterDiscoveryOptionsBase subclass instance for a given backend type.
-XrResult createAdapterDiscoveryOptions(XrInstance instance, XrSystemId systemId, WGPUBackendType backendType,
+XrResult createAdapterDiscoveryOptions(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType,
 									   dawn::native::AdapterDiscoveryOptionsBase** options);
 
 // Use this instead of xrCreateSession

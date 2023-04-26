@@ -11,7 +11,7 @@ namespace {
 struct Swapchain {
 	XrSwapchain const backendSwapchain;
 	Session* const session;
-	std::vector<WGPUTextureView> const images;
+	std::vector<wgpu::TextureView> const images;
 };
 
 std::unordered_map<XrSession, Session*> g_sessions;
@@ -22,19 +22,19 @@ std::unordered_map<XrSwapchain, Swapchain*> g_swapchains;
 
 namespace dawnxr {
 
-XrResult getGraphicsRequirements(XrInstance instance, XrSystemId systemId, WGPUBackendType backendType,
+XrResult getGraphicsRequirements(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType,
 								 GraphicsRequirementsDawn* requirements) {
 
 	if (requirements->type != XR_TYPE_GRAPHICS_REQUIREMENTS_DAWN_EXT) return XR_ERROR_HANDLE_INVALID;
 
 	switch (backendType) {
 #ifdef XR_USE_GRAPHICS_API_D3D12
-	case WGPUBackendType_D3D12:
+	case wgpu::BackendType::D3D12:
 		XR_TRY(getD3D12GraphicsRequirements(instance, systemId, requirements));
 		break;
 #endif
 #ifdef XR_USE_GRAPHICS_API_VULKAN
-	case WGPUBackendType_Vulkan:
+	case wgpu::BackendType::Vulkan:
 		XR_TRY(getVulkanGraphicsRequirements(instance, systemId, requirements));
 		break;
 #endif
@@ -45,17 +45,17 @@ XrResult getGraphicsRequirements(XrInstance instance, XrSystemId systemId, WGPUB
 	return XR_SUCCESS;
 }
 
-XrResult createAdapterDiscoveryOptions(XrInstance instance, XrSystemId systemId, WGPUBackendType backendType,
+XrResult createAdapterDiscoveryOptions(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType,
 									   dawn::native::AdapterDiscoveryOptionsBase** options) {
 
 	switch (backendType) {
 #ifdef XR_USE_GRAPHICS_API_D3D12
-	case WGPUBackendType_D3D12:
+	case wgpu::BackendType::D3D12:
 		XR_TRY(createD3D12AdapterDiscoveryOptions(instance, systemId, options));
 		break;
 #endif
 #ifdef XR_USE_GRAPHICS_API_VULKAN
-	case WGPUBackendType_Vulkan:
+	case wgpu::BackendType::Vulkan:
 		XR_TRY(createVulkanAdapterDiscoveryOptions(instance, systemId, options));
 		break;
 #endif
@@ -71,7 +71,8 @@ XrResult createSession(XrInstance instance, const XrSessionCreateInfo* createInf
 	auto binding = (GraphicsBindingDawn*)createInfo->next;
 	if (binding->type != XR_TYPE_GRAPHICS_BINDING_DAWN_EXT) return xrCreateSession(instance, createInfo, session);
 
-	auto backendType = dawn::native::GetWGPUBackendType(dawn::native::GetWGPUAdapter(binding->device));
+	auto backendType =
+		(wgpu::BackendType)dawn::native::GetWGPUBackendType(dawn::native::GetWGPUAdapter(binding->device.Get()));
 
 	// TODO: Woah, you *HAVE* to get graphics requirements or session creation fails?!?
 	//
@@ -82,12 +83,12 @@ XrResult createSession(XrInstance instance, const XrSessionCreateInfo* createInf
 
 	switch (backendType) {
 #ifdef XR_USE_GRAPHICS_API_D3D12
-	case WGPUBackendType_D3D12:
+	case wgpu::BackendType::D3D12:
 		XR_TRY(createD3D12Session(instance, createInfo, &dawnSession));
 		break;
 #endif
 #ifdef XR_USE_GRAPHICS_API_VULKAN
-	case WGPUBackendType_Vulkan:
+	case wgpu::BackendType::Vulkan:
 		XR_TRY(createVulkanSession(instance, createInfo, &dawnSession));
 		break;
 #endif
@@ -121,14 +122,14 @@ XrResult enumerateSwapchainFormats(XrSession session, uint32_t formatCapacityInp
 	}
 	auto dawnSession = it->second;
 
-	std::vector<WGPUTextureFormat> dawnFormats;
+	std::vector<wgpu::TextureFormat> dawnFormats;
 	XR_TRY(dawnSession->enumerateSwapchainFormats(dawnFormats));
 
 	*formatCountOutput = (uint32_t)dawnFormats.size();
 
 	if (formats) {
 		auto n = std::min(formatCapacityInput, *formatCountOutput);
-		for (auto i = 0u; i < n; ++i) formats[i] = dawnFormats[i];
+		for (auto i = 0u; i < n; ++i) formats[i] = (int64_t)dawnFormats[i];
 	}
 
 	return XR_SUCCESS;
@@ -140,7 +141,7 @@ XrResult createSwapchain(XrSession session, const XrSwapchainCreateInfo* createI
 	if (it == g_sessions.end()) return xrCreateSwapchain(session, createInfo, swapchain);
 	auto dawnSession = it->second;
 
-	std::vector<WGPUTextureView> images;
+	std::vector<wgpu::TextureView> images;
 	XR_TRY(dawnSession->createSwapchain(createInfo, images, swapchain));
 
 	auto dawnSwapchain = new Swapchain{*swapchain, dawnSession, std::move(images)};

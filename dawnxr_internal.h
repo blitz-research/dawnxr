@@ -2,7 +2,7 @@
 
 #include "dawnxr.h"
 
-#include <dawn/webgpu.h>
+#include <dawn/webgpu_xros.h>
 
 #include <vector>
 
@@ -24,11 +24,11 @@ namespace dawnxr::internal {
 struct Session {
 
 	XrSession const backendSession;
-	WGPUDevice const device;
+	wgpu::Device const device;
 
-	virtual XrResult enumerateSwapchainFormats(std::vector<WGPUTextureFormat>& formats) = 0;
+	virtual XrResult enumerateSwapchainFormats(std::vector<wgpu::TextureFormat>& formats) = 0;
 
-	virtual XrResult createSwapchain(const XrSwapchainCreateInfo* createInfo, std::vector<WGPUTextureView>& images,
+	virtual XrResult createSwapchain(const XrSwapchainCreateInfo* createInfo, std::vector<wgpu::TextureView>& images,
 									 XrSwapchain* swapchain) = 0;
 
 	// TODO: destroySwapchainImages
@@ -36,7 +36,7 @@ struct Session {
 	virtual ~Session() = default;
 
 protected:
-	Session(XrSession session, WGPUDevice device) : backendSession(session), device(device) {}
+	Session(XrSession session, const wgpu::Device& device) : backendSession(session), device(device) {}
 };
 
 #ifdef XR_USE_GRAPHICS_API_D3D12
