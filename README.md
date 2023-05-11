@@ -3,7 +3,7 @@ Dawn / openxr interop library
 Adds a dawn openxr platform that should work the same as existing d3d12, vulkan etc openxr
 platforms. 'Steals' the d3d11 platform defines to achieve this though.
 
-Must be used with this fork of dawn: https://github.com/blitz-research/dawn
+Must be used with the 'openxr' branch of this fork of dawn: https://github.com/blitz-research/dawn
 
 Uses the webgpu dawn c++ wrappers.
 
