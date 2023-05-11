@@ -2,21 +2,19 @@
 
 #include "dawnxr.h"
 
-#include <dawn/webgpu_xros.h>
-
 #include <vector>
 
-#define XR_TRY(X)                                                                                                      \
-	{                                                                                                                  \
-		auto r = (X);                                                                                                  \
-		if (XR_FAILED(r)) {                                                                                            \
-			std::cout << "### XR_TRY failed: " << #X << std::endl;                                                     \
-			return r;                                                                                                  \
-		}                                                                                                              \
+#define XR_TRY(X)                                                                                                              \
+	{                                                                                                                          \
+		auto r = (X);                                                                                                          \
+		if (XR_FAILED(r)) {                                                                                                    \
+			std::cout << "### XR_TRY failed: " << #X << std::endl;                                                             \
+			return r;                                                                                                          \
+		}                                                                                                                      \
 	}
 
-#define XR_PROC(XRINST, FUNCID)                                                                                        \
-	PFN_##FUNCID FUNCID{};                                                                                             \
+#define XR_PROC(XRINST, FUNCID)                                                                                                \
+	PFN_##FUNCID FUNCID{};                                                                                                     \
 	xrGetInstanceProcAddr((XRINST), #FUNCID, (PFN_xrVoidFunction*)(&FUNCID));
 
 namespace dawnxr::internal {
@@ -47,8 +45,7 @@ XrResult createD3D12Session(XrInstance instance, const XrSessionCreateInfo* crea
 #endif
 
 #ifdef XR_USE_GRAPHICS_API_VULKAN
-XrResult getVulkanGraphicsRequirements(XrInstance instance, XrSystemId systemId,
-									   GraphicsRequirementsDawn* requirements);
+XrResult getVulkanGraphicsRequirements(XrInstance instance, XrSystemId systemId, GraphicsRequirementsDawn* requirements);
 XrResult createVulkanAdapterDiscoveryOptions(XrInstance instance, XrSystemId systemId,
 											 dawn::native::AdapterDiscoveryOptionsBase** options);
 XrResult createVulkanSession(XrInstance instance, const XrSessionCreateInfo* createInfo, Session** session);
