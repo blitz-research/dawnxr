@@ -114,6 +114,7 @@ XrResult createVulkanAdapterDiscoveryOptions(XrInstance instance, XrSystemId sys
 		XR_PROC(instance, xrCreateVulkanInstanceKHR);
 
 		XrVulkanInstanceCreateInfoKHR createInfo{XR_TYPE_VULKAN_INSTANCE_CREATE_INFO_KHR};
+		createInfo.systemId = systemId;
 		createInfo.pfnGetInstanceProcAddr = getProcAddr;
 		createInfo.vulkanCreateInfo = vkCreateInfo;
 		createInfo.vulkanAllocator = vkAllocator;
@@ -143,6 +144,7 @@ XrResult createVulkanAdapterDiscoveryOptions(XrInstance instance, XrSystemId sys
 		XR_PROC(instance, xrCreateVulkanDeviceKHR);
 
 		XrVulkanDeviceCreateInfoKHR createInfo{XR_TYPE_VULKAN_DEVICE_CREATE_INFO_KHR};
+		createInfo.systemId = systemId;
 		createInfo.pfnGetInstanceProcAddr = getProcAddr;
 		createInfo.vulkanPhysicalDevice = vkPDevice;
 		createInfo.vulkanCreateInfo = vkCreateInfo;
