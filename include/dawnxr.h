@@ -2,11 +2,11 @@
 
 #include <dawn/webgpu_cpp.h>
 
-#include <dawn/native/DawnNative.h>
+//#include <dawn/native/VulkanBackend.h>
 
 // Currently only supports windows platform and D3D12, Vulkan backends.
 
-#if XROS_OS_WINDOWS
+#if WB_OS_WINDOWS
 #define XR_USE_GRAPHICS_API_D3D12 1
 #include <d3d12.h>
 #include <windows.h>
@@ -17,9 +17,7 @@
 #include <vulkan/vulkan.h>
 #else
 #define XR_USE_GRAPHICS_API_VULKAN 1
-//#define VK_USE_PLATFORM_WIN32_KHR 1
 #include <vulkan/vulkan.h>
-//#error System not supported
 #endif
 
 #include <openxr/openxr_platform.h>
@@ -56,8 +54,7 @@ XrResult getGraphicsRequirements(XrInstance instance, XrSystemId systemId, wgpu:
 								 GraphicsRequirementsDawn* graphicsRequirements);
 
 // Creates a dawn::native::AdapterDiscoveryOptionsBase subclass instance for a given backend type.
-XrResult createAdapterDiscoveryOptions(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType,
-									   dawn::native::AdapterDiscoveryOptionsBase** options);
+XrResult createOpenXRConfig(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType,void **config);
 
 // Use this instead of xrCreateSession
 XrResult createSession(XrInstance instance, const XrSessionCreateInfo* createInfo, XrSession* session);

@@ -1,6 +1,6 @@
 Dawn / openxr interop library
 
-Adds a dawn openxr platform that should work the same as existing d3d12, vulkan etc openxr
+Adds a dawn openxr platform that should work the same as the existing d3d12, vulkan etc openxr
 platforms. 'Steals' the d3d11 platform defines to achieve this though.
 
 Must be used with the 'openxr' branch of this fork of dawn: https://github.com/blitz-research/dawn
@@ -39,8 +39,7 @@ XrResult getGraphicsRequirements(XrInstance instance, XrSystemId systemId, wgpu:
 								 GraphicsRequirementsDawn* graphicsRequirements);
 
 // Creates a dawn::native::AdapterDiscoveryOptionsBase subclass instance for a given backend type.
-XrResult createAdapterDiscoveryOptions(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType,
-									   dawn::native::AdapterDiscoveryOptionsBase** options);
+XrResult createOpenXRConfig(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType, void** config);
 
 // Use this instead of xrCreateSession
 XrResult createSession(XrInstance instance, const XrSessionCreateInfo* createInfo, XrSession* session);
@@ -81,5 +80,4 @@ wgpu::Device createXRCompatibleDevice(wgpu::BackendType backendType) {
 ```
 
 Note that the createAdapterDiscoveryOptions call is only really necessary for Vulkan, OpenXR will generally 'just work'
-with
-D3D12 as is. 
+with D3D12 as is.

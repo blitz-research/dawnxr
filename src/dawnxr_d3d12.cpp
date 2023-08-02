@@ -94,17 +94,16 @@ XrResult getD3D12GraphicsRequirements(XrInstance instance, XrSystemId systemId,
 	XrGraphicsRequirementsD3D12KHR d3d12Reqs{XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR};
 	XR_TRY(xrGetD3D12GraphicsRequirementsKHR(instance, systemId, &d3d12Reqs));
 
-	std::cout << "### D3D12 graphics requirements minFeatureLevel: " << d3d12Reqs.minFeatureLevel << std::endl;
-	std::cout << "### D3D12 graphics requirements adapterLuid: " << d3d12Reqs.adapterLuid.HighPart << " "
-			  << d3d12Reqs.adapterLuid.LowPart << std::endl;
+//	std::cout << "### D3D12 graphics requirements minFeatureLevel: " << d3d12Reqs.minFeatureLevel << std::endl;
+//	std::cout << "### D3D12 graphics requirements adapterLuid: " << d3d12Reqs.adapterLuid.HighPart << " "
+//			  << d3d12Reqs.adapterLuid.LowPart << std::endl;
 
 	return XR_SUCCESS;
 }
 
-XrResult createD3D12AdapterDiscoveryOptions(XrInstance instance, XrSystemId systemId,
-											dawn::native::AdapterDiscoveryOptionsBase** options) {
+XrResult createD3D12OpenXRConfig(XrInstance instance, XrSystemId systemId,void** config) {
 
-	*options = new dawn::native::d3d12::AdapterDiscoveryOptions();
+	*config = nullptr;
 
 	return XR_SUCCESS;
 }
