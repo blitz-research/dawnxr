@@ -1,13 +1,14 @@
-Dawn / openxr interop library
+Dawn / OpenXR interop library.
 
-Adds a dawn openxr platform that should work the same as the existing d3d12, vulkan etc openxr
-platforms. 'Steals' the d3d11 platform defines to achieve this though.
+Adds a dawn platform to OpenXR that should work the same as the existing D3D12, Vulkan etc platforms.
 
-Must be used with the 'openxr' branch of this fork of dawn: https://github.com/blitz-research/dawn
+*Must* be used with the 'openxr-dev' branch of this fork of dawn: https://github.com/blitz-research/dawn
 
+Steals the D3D11 platform type defines.
+ 
 Uses the webgpu dawn c++ wrappers.
 
-Only provides backends for D3D12 and Vulkan.
+Only supports D3D12 and Vulkan.
 
 Only tested on Windows.
 
@@ -64,20 +65,32 @@ XrResult enumerateSwapchainImages(XrSwapchain swapchain, uint32_t imageCapacityI
 } // namespace dawnxr
 ```
 
-In practice, you can use it something like this:
+To create an XR compatible Vulkan dawn device (a D3D12 dawn device should just work 'as is' with the above functions):
 
 ```
 wgpu::Device createXRCompatibleDevice(wgpu::BackendType backendType) {
 
-	if (XR_FAILED(createXRInstance())) return {};
+    WB_ASSERT(backendType==wgpu::BackendType::D3D12 || backendType==wgpu::BackendType::Vulkan);
 
-	dawn::native::AdapterDiscoveryOptionsBase* options;
-	if (XR_FAILED(dawnxr::createAdapterDiscoveryOptions(g_instance, g_systemId, backendType, &options))) return {};
+	if (XR_FAILED(createXrInstance())) return {};
 
-	// normal dawn device creation code...
-	return createDevice(options);
+	wgpu::RequestAdapterOptions adapterOpts{};
+	dawn::native::vulkan::RequestAdapterOptionsOpenXRConfig adapterOptsXRConfig{};
+	
+	adapterOpts.backendType = backendType;
+	
+    // Don't need this for D3D12.
+	if(backendType == wgpu::BackendType::Vulkan) {
+		dawnxr::createOpenXRConfig(getXrInstance(), getXrSystemId(), backendType, (void**)&adapterOptsXRConfig.openXRConfig);
+		adapterOpts.nextInChain = &adapterOptsXRConfig;
+	}
+	
+	auto adapters = wgpuInstance->EnumerateAdapters(&adapterOpts);
+	WB_ASSERT(!adapters.empty());
+	
+	auto device = adapters.front().CreateDevice();
+	WB_ASSERT(device);
+
+	return device;
 }
 ```
-
-Note that the createAdapterDiscoveryOptions call is only really necessary for Vulkan, OpenXR will generally 'just work'
-with D3D12 as is.
