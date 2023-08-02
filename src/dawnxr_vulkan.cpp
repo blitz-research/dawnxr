@@ -120,7 +120,6 @@ XrResult createVulkanOpenXRConfig(XrInstance instance, XrSystemId systemId, void
 		auto r = xrCreateVulkanInstanceKHR(instance, &createInfo, vkInstance, &vkResult);
 		if (XR_FAILED(r)) return VK_ERROR_UNKNOWN;
 		return vkResult;
-		return VK_SUCCESS;
 	};
 
 	xrConfig->GetVkPhysicalDevice = [=](VkInstance vkInstance, VkPhysicalDevice* vkPDevice) -> VkResult {
@@ -153,6 +152,8 @@ XrResult createVulkanOpenXRConfig(XrInstance instance, XrSystemId systemId, void
 		return vkResult;
 	};
 
+    *config = xrConfig;
+    
 	return XR_SUCCESS;
 }
 
