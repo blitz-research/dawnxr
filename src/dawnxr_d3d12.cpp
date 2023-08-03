@@ -48,7 +48,8 @@ struct D3D12Session : Session {
 		wgpu::TextureDescriptor textureDesc{
 			nullptr,												  // nextInChain
 			nullptr,												  // label
-			wgpu::TextureUsage::RenderAttachment,					  // usage
+			wgpu::TextureUsage::RenderAttachment|					  // usage
+			wgpu::TextureUsage::TextureBinding,						  // ...does this need to be optional?
 			wgpu::TextureDimension::e2D,							  // dimension
 			wgpu::Extent3D{createInfo->width, createInfo->height, 1}, // size
 			(wgpu::TextureFormat)createInfo->format,				  // format
