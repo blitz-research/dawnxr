@@ -11,7 +11,7 @@ namespace {
 struct Swapchain {
 	XrSwapchain const backendSwapchain;
 	Session* const session;
-	std::vector<wgpu::TextureView> const images;
+	std::vector<wgpu::Texture> const images;
 };
 
 std::unordered_map<XrSession, Session*> g_sessions;
@@ -140,7 +140,7 @@ XrResult createSwapchain(XrSession session, const XrSwapchainCreateInfo* createI
 	if (it == g_sessions.end()) return xrCreateSwapchain(session, createInfo, swapchain);
 	auto dawnSession = it->second;
 
-	std::vector<wgpu::TextureView> images;
+	std::vector<wgpu::Texture> images;
 	XR_TRY(dawnSession->createSwapchain(createInfo, images, swapchain));
 
 	auto dawnSwapchain = new Swapchain{*swapchain, dawnSession, std::move(images)};
@@ -180,7 +180,7 @@ XrResult enumerateSwapchainImages(XrSwapchain swapchain, uint32_t imageCapacityI
 		auto dawnImages = (SwapchainImageDawn*)images;
 		for (auto i = 0u; i < n; ++i) {
 			if (dawnImages[i].type != XR_TYPE_SWAPCHAIN_IMAGE_DAWN_EXT) return XR_ERROR_HANDLE_INVALID;
-			dawnImages[i].textureView = dawnSwapchain->images[i];
+			dawnImages[i].texture = dawnSwapchain->images[i];
 		}
 	}
 

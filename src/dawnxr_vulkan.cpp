@@ -24,7 +24,7 @@ struct VulkanSession : Session {
 		return XR_SUCCESS;
 	}
 
-	XrResult createSwapchain(const XrSwapchainCreateInfo* createInfo, std::vector<wgpu::TextureView>& images,
+	XrResult createSwapchain(const XrSwapchainCreateInfo* createInfo, std::vector<wgpu::Texture>& images,
 							 XrSwapchain* swapchain) override {
 
 		if (createInfo->type != XR_TYPE_SWAPCHAIN_CREATE_INFO) return XR_ERROR_HANDLE_INVALID;
@@ -61,22 +61,10 @@ struct VulkanSession : Session {
 			nullptr													  // view formats
 		};
 
-		wgpu::TextureViewDescriptor textureViewDesc{
-			nullptr,						 // nextInChain
-			nullptr,						 // label
-			textureDesc.format,				 // format
-			wgpu::TextureViewDimension::e2D, // dimension
-			0,								 // baseMipLevel
-			1,								 // mipLevelCount
-			0,								 // baseArrayLayer
-			1,								 // arrayLayerCount
-			wgpu::TextureAspect::All		 // aspect
-		};
-
 		for (auto& it : vulkanImages) {
 			auto texture = wgpu::Texture(dawn::native::vulkan::CreateSwapchainWGPUTexture(
 				device.Get(), (WGPUTextureDescriptor*)&textureDesc, it.image));
-			images.push_back(texture.CreateView(&textureViewDesc));
+			images.push_back(texture);
 		}
 
 		return XR_SUCCESS;

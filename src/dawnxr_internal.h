@@ -28,7 +28,7 @@ struct Session {
 
 	virtual XrResult enumerateSwapchainFormats(std::vector<wgpu::TextureFormat>& formats) = 0;
 
-	virtual XrResult createSwapchain(const XrSwapchainCreateInfo* createInfo, std::vector<wgpu::TextureView>& images,
+	virtual XrResult createSwapchain(const XrSwapchainCreateInfo* createInfo, std::vector<wgpu::Texture>& images,
 									 XrSwapchain* swapchain) = 0;
 
 	// TODO: destroySwapchainImages

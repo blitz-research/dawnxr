@@ -40,7 +40,7 @@ struct GraphicsBindingDawn {
 struct SwapchainImageDawn {
 	XrStructureType type = XR_TYPE_SWAPCHAIN_IMAGE_DAWN_EXT;
 	void* XR_MAY_ALIAS next = nullptr;
-	wgpu::TextureView textureView;
+	wgpu::Texture texture;
 };
 
 // Mirrors the XrGraphicsRequirementsD3D12KHR etc structs.
