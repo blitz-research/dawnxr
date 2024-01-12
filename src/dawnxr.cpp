@@ -45,21 +45,23 @@ XrResult getGraphicsRequirements(XrInstance instance, XrSystemId systemId, wgpu:
 	return XR_SUCCESS;
 }
 
-XrResult createOpenXRConfig(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType,void** config) {
+XrResult createRequestAdapterOptions(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType,
+									 wgpu::ChainedStruct** opts) {
 
 	switch (backendType) {
 #ifdef XR_USE_GRAPHICS_API_D3D12
 	case wgpu::BackendType::D3D12:
-		XR_TRY(createD3D12OpenXRConfig(instance, systemId, config));
+		XR_TRY(createD3D12RequestAdapterOptions(instance, systemId, opts));
 		break;
 #endif
 #ifdef XR_USE_GRAPHICS_API_VULKAN
 	case wgpu::BackendType::Vulkan:
-		XR_TRY(createVulkanOpenXRConfig(instance, systemId, config));
+		XR_TRY(createVulkanRequestAdapterOptions(instance, systemId, opts));
 		break;
 #endif
 	default:
-		return XR_ERROR_RUNTIME_FAILURE;
+		*opts = nullptr;
+		break;
 	}
 
 	return XR_SUCCESS;
@@ -70,8 +72,7 @@ XrResult createSession(XrInstance instance, const XrSessionCreateInfo* createInf
 	auto binding = (GraphicsBindingDawn*)createInfo->next;
 	if (binding->type != XR_TYPE_GRAPHICS_BINDING_DAWN_EXT) return xrCreateSession(instance, createInfo, session);
 
-	auto backendType =
-		(wgpu::BackendType)dawn::native::GetWGPUBackendType(dawn::native::GetWGPUAdapter(binding->device.Get()));
+	auto backendType = (wgpu::BackendType)dawn::native::GetWGPUBackendType(dawn::native::GetWGPUAdapter(binding->device.Get()));
 
 	// TODO: Woah, you *HAVE* to get graphics requirements or session creation fails?!?
 	//

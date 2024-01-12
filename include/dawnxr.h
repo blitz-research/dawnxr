@@ -6,7 +6,7 @@
 
 // Currently only supports windows platform and D3D12, Vulkan backends.
 
-#if WB_OS_WINDOWS
+#ifdef _WIN32
 #define XR_USE_GRAPHICS_API_D3D12 1
 #include <d3d12.h>
 #include <windows.h>
@@ -54,7 +54,7 @@ XrResult getGraphicsRequirements(XrInstance instance, XrSystemId systemId, wgpu:
 								 GraphicsRequirementsDawn* graphicsRequirements);
 
 // Creates a dawn::native::AdapterDiscoveryOptionsBase subclass instance for a given backend type.
-XrResult createOpenXRConfig(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType,void **config);
+XrResult createRequestAdapterOptions(XrInstance instance, XrSystemId systemId, wgpu::BackendType backendType, wgpu::ChainedStruct** opts);
 
 // Use this instead of xrCreateSession
 XrResult createSession(XrInstance instance, const XrSessionCreateInfo* createInfo, XrSession* session);

@@ -15,7 +15,8 @@ const auto vulkanSwapchainFormat = VK_FORMAT_B8G8R8A8_SRGB;
 
 struct VulkanSession : Session {
 
-	VulkanSession(XrSession session, const wgpu::Device& device) : Session(session, device) {}
+	VulkanSession(XrSession session, const wgpu::Device& device) : Session(session, device) {
+	}
 
 	XrResult enumerateSwapchainFormats(std::vector<wgpu::TextureFormat>& formats) override {
 
@@ -42,16 +43,16 @@ struct VulkanSession : Session {
 
 		XR_TRY(xrEnumerateSwapchainImages(*swapchain, 0, &n, nullptr));
 		// XrSwapchainImageVulkan2KHR is an alias for XrSwapchainImageVulkanKHR
-		std::vector<XrSwapchainImageVulkan2KHR> vulkanImages(
-			n, XrSwapchainImageVulkan2KHR{XR_TYPE_SWAPCHAIN_IMAGE_VULKAN2_KHR});
+		std::vector<XrSwapchainImageVulkan2KHR> vulkanImages(n,
+															 XrSwapchainImageVulkan2KHR{XR_TYPE_SWAPCHAIN_IMAGE_VULKAN2_KHR});
 		XR_TRY(xrEnumerateSwapchainImages(*swapchain, n, &n, (XrSwapchainImageBaseHeader*)vulkanImages.data()));
 		if (n != vulkanImages.size()) return XR_ERROR_RUNTIME_FAILURE;
 
 		wgpu::TextureDescriptor textureDesc{
 			nullptr,												  // nextInChain
 			nullptr,												  // label
-			wgpu::TextureUsage::RenderAttachment|					  // usage
-			wgpu::TextureUsage::TextureBinding,						  // ...does this need to be optional?
+			wgpu::TextureUsage::RenderAttachment |					  // usage
+				wgpu::TextureUsage::TextureBinding,					  // ...does this need to be optional?
 			wgpu::TextureDimension::e2D,							  // dimension
 			wgpu::Extent3D{createInfo->width, createInfo->height, 1}, // size
 			(wgpu::TextureFormat)createInfo->format,				  // format
@@ -62,8 +63,8 @@ struct VulkanSession : Session {
 		};
 
 		for (auto& it : vulkanImages) {
-			auto texture = wgpu::Texture(dawn::native::vulkan::CreateSwapchainWGPUTexture(
-				device.Get(), (WGPUTextureDescriptor*)&textureDesc, it.image));
+			auto texture = wgpu::Texture(
+				dawn::native::vulkan::CreateSwapchainWGPUTexture(device.Get(), (WGPUTextureDescriptor*)&textureDesc, it.image));
 			images.push_back(texture);
 		}
 
@@ -75,28 +76,27 @@ struct VulkanSession : Session {
 
 namespace dawnxr::internal {
 
-XrResult getVulkanGraphicsRequirements(XrInstance instance, XrSystemId systemId,
-									   GraphicsRequirementsDawn* requirements) {
+XrResult getVulkanGraphicsRequirements(XrInstance instance, XrSystemId systemId, GraphicsRequirementsDawn* requirements) {
 
 	XR_PROC(instance, xrGetVulkanGraphicsRequirements2KHR);
 
 	XrGraphicsRequirementsVulkan2KHR vulkanReqs{XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN2_KHR};
 	XR_TRY(xrGetVulkanGraphicsRequirements2KHR(instance, systemId, &vulkanReqs));
 
-//	std::cout << "### Vulkan graphics requirements minApiVersionSupported: " << vulkanReqs.minApiVersionSupported
-//			  << std::endl;
-//	std::cout << "### Vulkan graphics requirements maxApiVersionSupported: " << vulkanReqs.maxApiVersionSupported
-//			  << std::endl;
+	//	std::cout << "### Vulkan graphics requirements minApiVersionSupported: " << vulkanReqs.minApiVersionSupported
+	//			  << std::endl;
+	//	std::cout << "### Vulkan graphics requirements maxApiVersionSupported: " << vulkanReqs.maxApiVersionSupported
+	//			  << std::endl;
 
 	return XR_SUCCESS;
 }
 
-XrResult createVulkanOpenXRConfig(XrInstance instance, XrSystemId systemId, void** config) {
+XrResult createVulkanRequestAdapterOptions(XrInstance instance, XrSystemId systemId, wgpu::ChainedStruct** opts) {
 
 	auto xrConfig = new dawn::native::vulkan::OpenXRConfig();
 
 	xrConfig->CreateVkInstance = [=](PFN_vkGetInstanceProcAddr getProcAddr, const VkInstanceCreateInfo* vkCreateInfo,
-									const VkAllocationCallbacks* vkAllocator, VkInstance* vkInstance) -> VkResult {
+									 const VkAllocationCallbacks* vkAllocator, VkInstance* vkInstance) -> VkResult {
 		XR_PROC(instance, xrCreateVulkanInstanceKHR);
 
 		XrVulkanInstanceCreateInfoKHR createInfo{XR_TYPE_VULKAN_INSTANCE_CREATE_INFO_KHR};
@@ -124,8 +124,8 @@ XrResult createVulkanOpenXRConfig(XrInstance instance, XrSystemId systemId, void
 	};
 
 	xrConfig->CreateVkDevice = [=](PFN_vkGetInstanceProcAddr getProcAddr, VkPhysicalDevice vkPDevice,
-								  const VkDeviceCreateInfo* vkCreateInfo, const VkAllocationCallbacks* vkAllocator,
-								  VkDevice* vkDevice) -> VkResult {
+								   const VkDeviceCreateInfo* vkCreateInfo, const VkAllocationCallbacks* vkAllocator,
+								   VkDevice* vkDevice) -> VkResult {
 		XR_PROC(instance, xrCreateVulkanDeviceKHR);
 
 		XrVulkanDeviceCreateInfoKHR createInfo{XR_TYPE_VULKAN_DEVICE_CREATE_INFO_KHR};
@@ -141,8 +141,10 @@ XrResult createVulkanOpenXRConfig(XrInstance instance, XrSystemId systemId, void
 		return vkResult;
 	};
 
-    *config = xrConfig;
-    
+	auto adapterOpts = new dawn::native::vulkan::RequestAdapterOptionsOpenXRConfig();
+	adapterOpts->openXRConfig = xrConfig;
+	*opts = adapterOpts;
+
 	return XR_SUCCESS;
 }
 

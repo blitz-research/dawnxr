@@ -10,7 +10,7 @@
 	{                                                                                                                          \
 		auto r = (X);                                                                                                          \
 		if (XR_FAILED(r)) {                                                                                                    \
-			std::cout << "### XR_TRY failed: " << #X << std::endl;                                                             \
+			std::cout << "### XR_TRY failed: " << #X << ' ' << r << std::endl;                                                 \
 			return r;                                                                                                          \
 		}                                                                                                                      \
 	}
@@ -36,18 +36,19 @@ struct Session {
 	virtual ~Session() = default;
 
 protected:
-	Session(XrSession session, const wgpu::Device& device) : backendSession(session), device(device) {}
+	Session(XrSession session, const wgpu::Device& device) : backendSession(session), device(device) {
+	}
 };
 
 #ifdef XR_USE_GRAPHICS_API_D3D12
 XrResult getD3D12GraphicsRequirements(XrInstance instance, XrSystemId systemId, GraphicsRequirementsDawn* requirements);
-XrResult createD3D12OpenXRConfig(XrInstance instance, XrSystemId systemId,void** config);
+XrResult createD3D12RequestAdapterOptions(XrInstance instance, XrSystemId systemId, wgpu::ChainedStruct** opts);
 XrResult createD3D12Session(XrInstance instance, const XrSessionCreateInfo* createInfo, Session** session);
 #endif
 
 #ifdef XR_USE_GRAPHICS_API_VULKAN
 XrResult getVulkanGraphicsRequirements(XrInstance instance, XrSystemId systemId, GraphicsRequirementsDawn* requirements);
-XrResult createVulkanOpenXRConfig(XrInstance instance, XrSystemId systemId, void** config);
+XrResult createVulkanRequestAdapterOptions(XrInstance instance, XrSystemId systemId, wgpu::ChainedStruct** opts);
 XrResult createVulkanSession(XrInstance instance, const XrSessionCreateInfo* createInfo, Session** session);
 #endif
 

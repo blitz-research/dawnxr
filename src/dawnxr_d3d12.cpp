@@ -5,6 +5,8 @@
 #include <iostream>
 #include <vector>
 
+#include "d3dx/d3dx12_core.h"
+
 using namespace dawnxr::internal;
 
 namespace {
@@ -14,7 +16,8 @@ const auto d3d12SwapchainFormat = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
 
 struct D3D12Session : Session {
 
-	D3D12Session(XrSession session, const wgpu::Device& device) : Session(session, device) {}
+	D3D12Session(XrSession session, const wgpu::Device& device) : Session(session, device) {
+	}
 
 	XrResult enumerateSwapchainFormats(std::vector<wgpu::TextureFormat>& formats) override {
 
@@ -33,23 +36,47 @@ struct D3D12Session : Session {
 		auto d3d12Info = *createInfo;
 		d3d12Info.format = d3d12SwapchainFormat;
 
+		if (0) {	// NOLINT
+			// Describe and create a Texture2D.
+			D3D12_RESOURCE_DESC textureDesc{};
+			textureDesc.MipLevels = d3d12Info.mipCount;
+			textureDesc.Format = (DXGI_FORMAT)d3d12Info.format;
+			textureDesc.Width = d3d12Info.width;
+			textureDesc.Height = d3d12Info.height;
+			textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+			textureDesc.DepthOrArraySize = d3d12Info.arraySize;
+			textureDesc.SampleDesc.Count = d3d12Info.sampleCount;
+			textureDesc.SampleDesc.Quality = 0;
+			textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+			auto d3d12Device = dawn::native::d3d12::GetD3D12Device(device.Get()).Get();
+
+			CD3DX12_HEAP_PROPERTIES heapProperties{D3D12_HEAP_TYPE_DEFAULT};
+
+			ID3D12Resource* resource;
+
+			std::cout << "### D3D12 Create Texture: "
+					  << d3d12Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc,
+															  D3D12_RESOURCE_STATE_COPY_SOURCE, nullptr,
+															  IID_PPV_ARGS(&resource))
+					  << std::endl;
+		}
+
 		XR_TRY(xrCreateSwapchain(backendSession, &d3d12Info, swapchain));
 		// TODO: Need to cleanup swapchain if any of the below fails
 
 		uint32_t n;
-
 		XR_TRY(xrEnumerateSwapchainImages(*swapchain, 0, &n, nullptr));
 
 		std::vector<XrSwapchainImageD3D12KHR> d3d12Images(n, {XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR});
-
 		XR_TRY(xrEnumerateSwapchainImages(*swapchain, n, &n, (XrSwapchainImageBaseHeader*)d3d12Images.data()));
 		if (n != d3d12Images.size()) return XR_ERROR_RUNTIME_FAILURE;
 
 		wgpu::TextureDescriptor textureDesc{
 			nullptr,												  // nextInChain
 			nullptr,												  // label
-			wgpu::TextureUsage::RenderAttachment|					  // usage
-			wgpu::TextureUsage::TextureBinding,						  // ...does this need to be optional?
+			wgpu::TextureUsage::RenderAttachment |					  // usage
+				wgpu::TextureUsage::TextureBinding,					  // ...does this need to be optional?
 			wgpu::TextureDimension::e2D,							  // dimension
 			wgpu::Extent3D{createInfo->width, createInfo->height, 1}, // size
 			(wgpu::TextureFormat)createInfo->format,				  // format
@@ -73,8 +100,7 @@ struct D3D12Session : Session {
 
 namespace dawnxr::internal {
 
-XrResult getD3D12GraphicsRequirements(XrInstance instance, XrSystemId systemId,
-									  GraphicsRequirementsDawn* requirements) {
+XrResult getD3D12GraphicsRequirements(XrInstance instance, XrSystemId systemId, GraphicsRequirementsDawn* requirements) {
 
 	PFN_xrGetD3D12GraphicsRequirementsKHR xrGetD3D12GraphicsRequirementsKHR = nullptr;
 	XR_TRY(xrGetInstanceProcAddr(instance, "xrGetD3D12GraphicsRequirementsKHR",
@@ -90,9 +116,20 @@ XrResult getD3D12GraphicsRequirements(XrInstance instance, XrSystemId systemId,
 	return XR_SUCCESS;
 }
 
-XrResult createD3D12OpenXRConfig(XrInstance instance, XrSystemId systemId,void** config) {
+XrResult createD3D12RequestAdapterOptions(XrInstance instance, XrSystemId systemId, wgpu::ChainedStruct** opts) {
 
-	*config = nullptr;
+	// TODO: Should really add a D3D_FEATURE_LEVEL adapter option to dawn, as it's hardcoded to 11_0 in dawn but OpenXR wants 12_0.
+
+	PFN_xrGetD3D12GraphicsRequirementsKHR xrGetD3D12GraphicsRequirementsKHR = nullptr;
+	XR_TRY(xrGetInstanceProcAddr(instance, "xrGetD3D12GraphicsRequirementsKHR",
+								 (PFN_xrVoidFunction*)(&xrGetD3D12GraphicsRequirementsKHR)));
+
+	XrGraphicsRequirementsD3D12KHR d3d12Reqs{XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR};
+	XR_TRY(xrGetD3D12GraphicsRequirementsKHR(instance, systemId, &d3d12Reqs));
+
+	auto adapterOpts = new dawn::native::d3d::RequestAdapterOptionsLUID();
+	adapterOpts->adapterLUID = d3d12Reqs.adapterLuid;
+	*opts = adapterOpts;
 
 	return XR_SUCCESS;
 }
@@ -110,8 +147,8 @@ XrResult createD3D12Session(XrInstance instance, const XrSessionCreateInfo* crea
 	d3d12Binding.device = dawn::native::d3d12::GetD3D12Device(dawnDevice.Get()).Get();
 	d3d12Binding.queue = dawn::native::d3d12::GetD3D12CommandQueue(dawnDevice.Get()).Get();
 
-	//	auto luid = d3d12Binding.device->GetAdapterLuid();
-	//	std::cout << "### D3D12 Device adapter LUID: " << luid.HighPart << " " << luid.LowPart << std::endl;
+//	auto luid = d3d12Binding.device->GetAdapterLuid();
+//	std::cout << "### D3D12 Device adapter LUID: " << luid.HighPart << " " << luid.LowPart << std::endl;
 
 	XrSessionCreateInfo d3d12CreateInfo{XR_TYPE_SESSION_CREATE_INFO};
 	d3d12CreateInfo.next = &d3d12Binding;
